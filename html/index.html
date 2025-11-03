@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv4 Калькулятор Подсетей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #666;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .input-row > div {
+            flex: 1;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .result-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .binary {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #c33;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .subnets-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .subnets-container.show {
+            display: block;
+        }
+        
+        .subnet-card {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .subnet-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+        
+        .subnet-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .subnet-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .subnet-info-label {
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        
+        .subnet-info-value {
+            color: #333;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .subnets-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .subnets-summary h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 IPv4 Калькулятор</h1>
+        <p class="subtitle">Расчет подсетей и сетевых параметров</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('calc')">Калькулятор</button>
+            <button class="tab" onclick="switchTab('subnet')">Разделение на подсети</button>
+        </div>
+        
+        <!-- Калькулятор -->
+        <div id="calc-tab" class="tab-content active">
+            <div class="input-group">
+                <label>IP Адрес</label>
+                <input type="text" id="ipAddress" placeholder="192.168.1.1" value="192.168.1.100">
+            </div>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Маска подсети (CIDR)</label>
+                    <select id="cidr">
+                        <option value="8">/8 (255.0.0.0)</option>
+                        <option value="16">/16 (255.255.0.0)</option>
+                        <option value="24" selected>/24 (255.255.255.0)</option>
+                        <option value="25">/25 (255.255.255.128)</option>
+                        <option value="26">/26 (255.255.255.192)</option>
+                        <option value="27">/27 (255.255.255.224)</option>
+                        <option value="28">/28 (255.255.255.240)</option>
+                        <option value="29">/29 (255.255.255.248)</option>
+                        <option value="30">/30 (255.255.255.252)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="calculate()">Рассчитать</button>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="results" id="results">
+                <div class="result-item">
+                    <div class="result-label">IP Адрес</div>
+                    <div class="result-value" id="ip"></div>
+                    <div class="binary" id="ipBinary"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Маска подсети</div>
+                    <div class="result-value" id="mask"></div>
+                    <div class="binary" id="maskBinary"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Адрес сети</div>
+                    <div class="result-value" id="network"></div>
+                    <div class="binary" id="networkBinary"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Broadcast адрес</div>
+                    <div class="result-value" id="broadcast"></div>
+                    <div class="binary" id="broadcastBinary"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Первый хост</div>
+                    <div class="result-value" id="firstHost"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Последний хост</div>
+                    <div class="result-value" id="lastHost"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Количество хостов</div>
+                    <div class="result-value" id="hosts"></div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">Wildcard маска</div>
+                    <div class="result-value" id="wildcard"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Разделение на подсети -->
+        <div id="subnet-tab" class="tab-content">
+            <div class="input-group">
+                <label>Сетевой адрес</label>
+                <input type="text" id="networkAddress" placeholder="192.168.1.0" value="192.168.1.0">
+            </div>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Исходная маска (CIDR)</label>
+                    <select id="originalCidr">
+                        <option value="8">/8</option>
+                        <option value="16">/16</option>
+                        <option value="24" selected>/24</option>
+                        <option value="25">/25</option>
+                        <option value="26">/26</option>
+                        <option value="27">/27</option>
+                        <option value="28">/28</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Новая маска (CIDR)</label>
+                    <select id="newCidr">
+                        <option value="25">/25</option>
+                        <option value="26" selected>/26</option>
+                        <option value="27">/27</option>
+                        <option value="28">/28</option>
+                        <option value="29">/29</option>
+                        <option value="30">/30</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="divideSubnets()">Разделить на подсети</button>
+            
+            <div class="error" id="subnetError"></div>
+            
+            <div class="subnets-container" id="subnetsContainer"></div>
+        </div>
+    </div>
+    
+    <script>
+        function ipToInt(ip) {
+            return ip.split('.').reduce((int, octet) => (int << 8) + parseInt(octet), 0) >>> 0;
+        }
+        
+        function intToIp(int) {
+            return [(int >>> 24) & 255, (int >>> 16) & 255, (int >>> 8) & 255, int & 255].join('.');
+        }
+        
+        function ipToBinary(ip) {
+            return ip.split('.').map(octet => 
+                parseInt(octet).toString(2).padStart(8, '0')
+            ).join('.');
+        }
+        
+        function validateIP(ip) {
+            const parts = ip.split('.');
+            if (parts.length !== 4) return false;
+            return parts.every(part => {
+                const num = parseInt(part);
+                return num >= 0 && num <= 255 && part === num.toString();
+            });
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'calc') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('calc-tab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('subnet-tab').classList.add('active');
+            }
+        }
+        
+        function calculate() {
+            const ipInput = document.getElementById('ipAddress').value.trim();
+            const cidr = parseInt(document.getElementById('cidr').value);
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            
+            errorDiv.classList.remove('show');
+            resultsDiv.classList.remove('show');
+            
+            if (!validateIP(ipInput)) {
+                errorDiv.textContent = '❌ Неверный формат IP адреса!';
+                errorDiv.classList.add('show');
+                return;
+            }
+            
+            const ipInt = ipToInt(ipInput);
+            const maskInt = (-1 << (32 - cidr)) >>> 0;
+            const networkInt = ipInt & maskInt;
+            const broadcastInt = networkInt | (~maskInt >>> 0);
+            const firstHostInt = networkInt + 1;
+            const lastHostInt = broadcastInt - 1;
+            const wildcardInt = ~maskInt >>> 0;
+            const totalHosts = Math.pow(2, 32 - cidr) - 2;
+            
+            const mask = intToIp(maskInt);
+            const network = intToIp(networkInt);
+            const broadcast = intToIp(broadcastInt);
+            const firstHost = intToIp(firstHostInt);
+            const lastHost = intToIp(lastHostInt);
+            const wildcard = intToIp(wildcardInt);
+            
+            document.getElementById('ip').textContent = ipInput + '/' + cidr;
+            document.getElementById('ipBinary').textContent = ipToBinary(ipInput);
+            
+            document.getElementById('mask').textContent = mask;
+            document.getElementById('maskBinary').textContent = ipToBinary(mask);
+            
+            document.getElementById('network').textContent = network + '/' + cidr;
+            document.getElementById('networkBinary').textContent = ipToBinary(network);
+            
+            document.getElementById('broadcast').textContent = broadcast;
+            document.getElementById('broadcastBinary').textContent = ipToBinary(broadcast);
+            
+            document.getElementById('firstHost').textContent = firstHost;
+            document.getElementById('lastHost').textContent = lastHost;
+            document.getElementById('hosts').textContent = totalHosts.toLocaleString();
+            document.getElementById('wildcard').textContent = wildcard;
+            
+            resultsDiv.classList.add('show');
+        }
+        
+        function divideSubnets() {
+            const networkInput = document.getElementById('networkAddress').value.trim();
+            const originalCidr = parseInt(document.getElementById('originalCidr').value);
+            const newCidr = parseInt(document.getElementById('newCidr').value);
+            const errorDiv = document.getElementById('subnetError');
+            const container = document.getElementById('subnetsContainer');
+            
+            errorDiv.classList.remove('show');
+            container.classList.remove('show');
+            container.innerHTML = '';
+            
+            if (!validateIP(networkInput)) {
+                errorDiv.textContent = '❌ Неверный формат IP адреса!';
+                errorDiv.classList.add('show');
+                return;
+            }
+            
+            if (newCidr <= originalCidr) {
+                errorDiv.textContent = '❌ Новая маска должна быть больше исходной!';
+                errorDiv.classList.add('show');
+                return;
+            }
+            
+            const networkInt = ipToInt(networkInput);
+            const subnetSize = Math.pow(2, 32 - newCidr);
+            const numSubnets = Math.pow(2, newCidr - originalCidr);
+            const hostsPerSubnet = Math.pow(2, 32 - newCidr) - 2;
+            
+            const maskInt = (-1 << (32 - newCidr)) >>> 0;
+            const mask = intToIp(maskInt);
+            
+            const summary = document.createElement('div');
+            summary.className = 'subnets-summary';
+            summary.innerHTML = `
+                <h3>📊 Сводка разделения</h3>
+                <div>Количество подсетей: <strong>${numSubnets}</strong></div>
+                <div>Хостов в каждой подсети: <strong>${hostsPerSubnet}</strong></div>
+                <div>Новая маска: <strong>${mask} (/${newCidr})</strong></div>
+            `;
+            container.appendChild(summary);
+            
+            for (let i = 0; i < numSubnets; i++) {
+                const subnetNetworkInt = networkInt + (i * subnetSize);
+                const subnetBroadcastInt = subnetNetworkInt + subnetSize - 1;
+                const subnetFirstHostInt = subnetNetworkInt + 1;
+                const subnetLastHostInt = subnetBroadcastInt - 1;
+                
+                const subnetNetwork = intToIp(subnetNetworkInt);
+                const subnetBroadcast = intToIp(subnetBroadcastInt);
+                const subnetFirstHost = intToIp(subnetFirstHostInt);
+                const subnetLastHost = intToIp(subnetLastHostInt);
+                
+                const card = document.createElement('div');
+                card.className = 'subnet-card';
+                card.innerHTML = `
+                    <div class="subnet-header">Подсеть ${i + 1}</div>
+                    <div class="subnet-info">
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Сеть</span>
+                            <span class="subnet-info-value">${subnetNetwork}/${newCidr}</span>
+                        </div>
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Маска</span>
+                            <span class="subnet-info-value">${mask}</span>
+                        </div>
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Первый хост</span>
+                            <span class="subnet-info-value">${subnetFirstHost}</span>
+                        </div>
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Последний хост</span>
+                            <span class="subnet-info-value">${subnetLastHost}</span>
+                        </div>
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Broadcast</span>
+                            <span class="subnet-info-value">${subnetBroadcast}</span>
+                        </div>
+                        <div class="subnet-info-item">
+                            <span class="subnet-info-label">Хостов</span>
+                            <span class="subnet-info-value">${hostsPerSubnet}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+            
+            container.classList.add('show');
+        }
+        
+        calculate();
+    </script>
+</body>
+</html>
